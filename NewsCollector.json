@@ -1,0 +1,375 @@
+{
+  "name": "NewsCollector",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        -176
+      ],
+      "id": "2f0dbbb9-cd00-4378-9e78-ef103d710568",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=从以下内容中，帮我进行新闻数据解析：\n{{ $json.content }}\n\n请你把文本中的“每一条新闻”都解析出来，并按下面要求提取结构化信息。  \n只关心金融相关的新闻，其他内容忽略。\n\n需要为每条新闻提取这些字段：\n\n1. `type`：新闻类型  \n   - 如果是宏观经济、央行、利率、通胀、汇率、经济数据、政策监管等 => 填写 `\"宏观\"`\n   - 如果是单个公司、行业事件、个股公告、财报、融资并购等 => 填写 `\"微观\"`\n\n2. `time`：新闻对应的时间（尽量用原文时间；如果只有日期，就用日期；如果完全没有时间信息，填空字符串 `\"\"`）\n\n3. `title`：给这条新闻起一个简短标题（不超过 30 个字）\n\n4. `summary`：用 1–3 句话概括新闻的核心内容，方便做交易决策\n\n5. `importance`：根据内容主观判断的重要程度，只能是以下三种之一：  \n   - `\"高\"`：可能显著影响市场/板块/个股（如：利率决议、大超预期/大幅下修、重大监管、黑天鹅事件、大型公司重大事故/违约等）  \n   - `\"中\"`：对相关资产有一定影响（如：正常财报略超预期、常规经济数据、有一定权重的政策消息等）  \n   - `\"低\"`：信息增量较小或影响范围很小（日常运营消息、小公司新闻、重复性消息等）\n\n6. `sector`：这条新闻对应的主要金融板块，只能从下面列表中选择一个最匹配的值：  \n   - `\"宏观/利率\"`（央行、利率、通胀、GDP、就业等）  \n   - `\"外汇\"`  \n   - `\"股权/股票\"`  \n   - `\"信用/债券\"`  \n   - `\"大宗商品\"`（原油、金属、农产品等）  \n   - `\"房地产\"`  \n   - `\"银行/金融服务\"`  \n   - `\"科技\"`  \n   - `\"消费\"`  \n   - `\"工业/制造\"`  \n   - `\"能源/公用事业\"`  \n   - `\"加密货币\"`  \n   - 如果确实无法判断，填 `\"其他\"`\n\n严格按照下面给你的 JSON 格式输出，不要输出任何多余文字（不要解释、不要加注释、不要自然语言，只输出 JSON）：\n\n===以下为输出格式===\n\n{\n  \"macro\": [\n    {\n      \"type\": \"宏观\",\n      \"time\": \"2025-08-25 21:30\",\n      \"title\": \"示例：美联储公布利率决议\",\n      \"summary\": \"示例：美联储将基准利率上调25个基点，符合市场预期，并暗示后续将视通胀数据决定进一步行动。\",\n      \"importance\": \"高\",\n      \"sector\": \"宏观/利率\"\n    }\n    // 如果没有宏观新闻，这里返回空数组 []\n  ],\n  \"micro\": [\n    {\n      \"type\": \"微观\",\n      \"time\": \"2025-08-25\",\n      \"title\": \"示例：某科技公司发布财报\",\n      \"summary\": \"示例：该公司二季度营收和净利润大幅超预期，并上调全年业绩指引。\",\n      \"importance\": \"中\",\n      \"sector\": \"科技\"\n    }\n    // 如果没有微观新闻，这里返回空数组 []\n  ]\n}\n\n===示例结束===\n\n要求：\n- 所有字符串用双引号 `\"` 包裹。\n- 如果某个字段没有信息，请用空字符串 `\"\"`，不要填 null。\n- 保证输出是合法的 JSON，可以被程序直接解析。\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        48,
+        -176
+      ],
+      "id": "1c0ed9e2-6a39-4b50-9271-b46bc6d7432b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        32,
+        112
+      ],
+      "id": "03c52017-2e5b-4e9e-bab3-d19cacc09d5b",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "onuh18dRB8qoGaRm",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"output\": {\n    \"macro\": [\n      {\n        \"type\": \"macro\",\n        \"time\": \"2025-11-17 09:00\",\n        \"title\": \"Example Macro Headline\",\n        \"summary\": \"This is the macro news summary.\",\n        \"importance\": \"High\",\n        \"sector\": \"Finance\"\n      }\n    ],\n    \"micro\": [\n      {\n        \"type\": \"micro\",\n        \"time\": \"2025-11-17 09:10\",\n        \"title\": \"Example Micro Headline\",\n        \"summary\": \"This is the micro news summary.\",\n        \"importance\": \"Medium\",\n        \"sector\": \"Tech\"\n      }\n    ]\n  }\n}\n",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        256,
+        48
+      ],
+      "id": "69b061cb-3773-412b-bcae-5269c56b0902",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        320,
+        192
+      ],
+      "id": "58715480-e9fb-4854-b9bd-fac7a630bd00",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "onuh18dRB8qoGaRm",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "hank1086730@gmail.com, zkfergus23@gmail.com, roklee_811@outlook.com",
+        "subject": "WAKEUP NIGAAAAA",
+        "message": "=<!DOCTYPE html> <html> <head>   <meta charset=\"UTF-8\">   <style>     body { font-family: Arial; padding: 20px; }     .container { background: #fff; padding: 20px; border-radius: 8px; }     h2 { border-bottom: 1px solid #ddd; padding-bottom: 6px; }     ul { padding-left: 20px; }     li { margin-bottom: 8px; }   </style> </head> <body>   <div class=\"container\">      <h2>🌐 Macro News</h2>     <ul>       {{ ($json.output.macro || []).map(n => `         <li>           <b>${n.title}</b><br>           <i>${n.time}</i><br>           ${n.summary}<br>           Sector: ${n.sector} — Importance: ${n.importance}         </li>       `).join('') }}     </ul>      <h2>🏭 Micro News</h2>     <ul>       {{ ($json.output.micro || []).map(n => `         <li>           <b>${n.title}</b><br>           <i>${n.time}</i><br>           ${n.summary}<br>           Sector: ${n.sector} — Importance: ${n.importance}         </li>       `).join('') }}     </ul>    </div> </body> </html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        624,
+        -128
+      ],
+      "id": "3989d4bf-1b1b-40dc-94d5-f5f66448f8e9",
+      "name": "Send a message",
+      "webhookId": "dd71b7a0-77ef-45d9-86ca-dafb5467dac0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "DFRT5CPBDQc6fD1m",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.reuters.com/technology/",
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.jinaAi",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        -352
+      ],
+      "id": "c8634cbf-5fd8-4cc4-9852-27c25bd9ea67",
+      "name": "Router_TechNews_collector",
+      "credentials": {
+        "jinaAiApi": {
+          "id": "Hdt5R5Clc9OaCdzI",
+          "name": "Jina AI account"
+        }
+      },
+      "notes": "Router‘s/market input"
+    },
+    {
+      "parameters": {
+        "url": "https://www.reuters.com/markets/",
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.jinaAi",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        -176
+      ],
+      "id": "68f5f978-5fb5-4555-b3f9-f96f9dcd9f07",
+      "name": "Routers_MarketNews_collector",
+      "credentials": {
+        "jinaAiApi": {
+          "id": "Hdt5R5Clc9OaCdzI",
+          "name": "Jina AI account"
+        }
+      },
+      "notes": "Router‘s/market input"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -384,
+        -208
+      ],
+      "id": "98ed6281-ebf3-4b15-a1a1-8fb6bda034a2",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "url": "https://finance.yahoo.com/news/",
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.jinaAi",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        16
+      ],
+      "id": "6b36b260-ba3d-47b5-85b4-1f561bfeb1f7",
+      "name": "Yahoo_News_Collector",
+      "credentials": {
+        "jinaAiApi": {
+          "id": "Hdt5R5Clc9OaCdzI",
+          "name": "Jina AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.cnbc.com/technology/",
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.jinaAi",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        160
+      ],
+      "id": "fa1ffe63-fe96-4604-9c31-951269490e1d",
+      "name": "CNBCs_Tech_collector1",
+      "credentials": {
+        "jinaAiApi": {
+          "id": "Hdt5R5Clc9OaCdzI",
+          "name": "Jina AI account"
+        }
+      },
+      "notes": "Router‘s/market input"
+    },
+    {
+      "parameters": {
+        "url": "https://www.wsj.com/",
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.jinaAi",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        224
+      ],
+      "id": "af87d9d1-9756-49f5-85b2-2561f09bbba8",
+      "name": "WSJs_Tech_collector",
+      "credentials": {
+        "jinaAiApi": {
+          "id": "Hdt5R5Clc9OaCdzI",
+          "name": "Jina AI account"
+        }
+      },
+      "notes": "Router‘s/market input"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Yahoo_News_Collector",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Routers_MarketNews_collector",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Router_TechNews_collector",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "WSJs_Tech_collector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Routers_MarketNews_collector": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Router_TechNews_collector": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Yahoo_News_Collector": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "CNBCs_Tech_collector1": {
+      "main": [
+        []
+      ]
+    },
+    "WSJs_Tech_collector": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "89d504db-45aa-4d8a-86d9-939dad871fb7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c8cb381dfd2d979d777f6f498a3959c1175d303ca6e971402f50933202b0e386"
+  },
+  "id": "0nRlYIHYKignJGMA",
+  "tags": []
+}
